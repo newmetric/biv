@@ -1684,6 +1684,7 @@ dependencies = [
 [[package]]
 name = "testcontainers"
 version = "0.26.3"
+source = "git+https://github.com/0xF0D0/testcontainers-rs#8088e4ff8bb7e2625c0e1f15ddb4a68eb0422649"
 dependencies = [
  "astral-tokio-tar",
  "async-trait",
