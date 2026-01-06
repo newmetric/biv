@@ -27,6 +27,13 @@ impl Packet {
             Packet::Init(_) => None,
         }
     }
+    pub fn data(&self) -> Vec<u8> {
+        match self {
+            Packet::Rpc(rpc) => rpc.data.clone(),
+            Packet::Broadcast(broadcast) => broadcast.data.clone(),
+            Packet::Init(init) => init.data.clone(),
+        }
+    }
 }
 
 #[serde_as]

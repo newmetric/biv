@@ -25,10 +25,12 @@ use crate::{
 };
 
 mod container;
-mod input;
-mod line_decoder;
+pub mod input;
+pub mod line_decoder;
 #[cfg(test)]
 mod test;
+
+pub type BivRuntime = Runtime<container::Container>;
 
 pub struct Runtime<C: RunnableContainer> {
     pub(crate) containers: HashMap<NodeId, C>,

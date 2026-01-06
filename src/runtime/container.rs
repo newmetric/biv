@@ -25,7 +25,7 @@ where
     async fn stop(&self);
 }
 
-struct Container {
+pub struct Container {
     inner_container: ContainerAsync<GenericImage>,
     input_tx: mpsc::Sender<Packet>,
 }
@@ -99,7 +99,7 @@ impl RunnableContainer for Container {
                 if let Some(result) = decoder.add_to_buffer(line.clone()) {
                     match result {
                         Ok(p) => {
-                            output_tx.send(p);
+                            output_tx.send(p).await.unwrap();
                             decoder.clear();
                         }
                         Err(e) => {
