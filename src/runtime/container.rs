@@ -16,7 +16,8 @@ where
     Self: Sized + Send,
 {
     async fn launch(
-        docker_file_path: String,
+        image_name: &'static str,
+        image_tag: &'static str,
         env: Vec<Env>,
         node_name: String,
     ) -> anyhow::Result<Self>;
@@ -32,15 +33,14 @@ pub struct Container {
 
 impl RunnableContainer for Container {
     async fn launch(
-        docker_file_path: String,
+        image_name: &'static str,
+        image_tag: &'static str,
         env: Vec<Env>,
         node_name: String,
     ) -> anyhow::Result<Self> {
         //launch container from docker file path with env
-        let image = GenericBuildableImage::new("test", "0.0.1")
-            .with_dockerfile(docker_file_path)
-            .build_image()
-            .await?;
+
+        let image = GenericImage::new(image_name, image_tag);
 
         let mut container_req = image.with_container_name(&node_name).with_open_stdin(true);
         for e in env {
@@ -144,7 +144,8 @@ impl MockContainer {
 #[cfg(test)]
 impl RunnableContainer for MockContainer {
     async fn launch(
-        _docker_file_path: String,
+        _image_name: &'static str,
+        _image_tag: &'static str,
         _env: Vec<Env>,
         node_name: String,
     ) -> anyhow::Result<Self> {

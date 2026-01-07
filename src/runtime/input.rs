@@ -8,7 +8,8 @@ pub struct Test {
     //input
     pub input: HashMap<NodeId, Vec<Vec<u8>>>,
 
-    pub dockerfile_path: String,
+    pub image_name: &'static str,
+    pub image_tag: &'static str,
     pub env: Vec<Env>,
     pub end_delay_secs: u64,
 }

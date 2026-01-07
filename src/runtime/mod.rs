@@ -2,9 +2,8 @@ use std::{collections::HashMap, time::Duration};
 
 use anyhow::anyhow;
 use futures::TryFutureExt;
-use testcontainers::bollard::fsutil::types::packet;
 use tokio::{
-    sync::{broadcast, mpsc, oneshot},
+    sync::{mpsc, oneshot},
     time::timeout,
 };
 
@@ -16,7 +15,7 @@ use tokio::{
  * 4. assert with the checkers
  */
 use crate::{
-    packet::{Broadcast, Init, NodeId, Packet, Rpc},
+    packet::{Init, NodeId, Packet},
     runtime::{
         container::RunnableContainer,
         input::{Env, History, Test},
@@ -81,7 +80,7 @@ impl<C: RunnableContainer> Runtime<C> {
 
     async fn launch_all_nodes(&mut self, t: &Test) -> anyhow::Result<()> {
         for node_name in &t.nodes {
-            self.launch_node(t.dockerfile_path.clone(), t.env.clone(), node_name.clone())
+            self.launch_node(t.image_name, t.image_tag, t.env.clone(), node_name.clone())
                 .await?;
         }
         Ok(())
@@ -89,11 +88,12 @@ impl<C: RunnableContainer> Runtime<C> {
 
     async fn launch_node(
         &mut self,
-        docker_file_path: String,
+        image_name: &'static str,
+        image_tag: &'static str,
         env: Vec<Env>,
         node_name: NodeId,
     ) -> anyhow::Result<()> {
-        let c = C::launch(docker_file_path, env, node_name.clone())
+        let c = C::launch(image_name, image_tag, env, node_name.clone())
             .map_err(|e| anyhow!(e))
             .await?;
         self.containers.insert(node_name, c);

@@ -18,7 +18,8 @@ async fn test_runtime_launch_creates_and_saves_containers() {
         .launch_test(Test {
             nodes: nodenames.iter().map(|s| s.to_string()).collect(),
             input: HashMap::new(),
-            dockerfile_path: "".to_string(),
+            image_name: "",
+            image_tag: "",
             env: vec![],
             end_delay_secs: 2,
         })
