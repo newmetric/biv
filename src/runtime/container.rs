@@ -76,6 +76,7 @@ impl RunnableContainer for Container {
         tokio::spawn(async move {
             while let Some(packet) = input_rx.recv().await {
                 let input_str = serde_json::to_string(&packet).unwrap();
+                eprintln!("stdin: ${}", input_str);
                 stdin
                     .write_all(input_str.into_bytes().as_slice())
                     .await
@@ -96,9 +97,11 @@ impl RunnableContainer for Container {
             let mut decoder = LineDecoder::new();
             let output_tx = output_tx.clone();
             while let Some(line) = stdout.next_line().await.unwrap() {
+                eprintln!("stdout: {}", line);
                 if let Some(result) = decoder.add_to_buffer(line.clone()) {
                     match result {
                         Ok(p) => {
+                            eprintln!("stdout packet");
                             output_tx.send(p).await.unwrap();
                             decoder.clear();
                         }
@@ -107,6 +110,14 @@ impl RunnableContainer for Container {
                         }
                     }
                 }
+            }
+        });
+
+
+        let mut stdout = self.inner_container.stderr(true).lines();
+        tokio::spawn(async move {
+            while let Some(line) = stdout.next_line().await.unwrap() {
+                eprintln!("stderr: {}", line);
             }
         });
     }
