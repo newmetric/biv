@@ -1,7 +1,8 @@
+use testcontainers::core::WaitFor;
 use testcontainers::{
-    ContainerAsync, GenericBuildableImage, GenericImage, ImageExt,
+    ContainerAsync, GenericImage, ImageExt,
     bollard::query_parameters::AttachContainerOptions,
-    runners::{AsyncBuilder, AsyncRunner},
+    runners::AsyncRunner,
 };
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
 use tokio::sync::mpsc;
@@ -27,6 +28,7 @@ where
 }
 
 pub struct Container {
+    node_name: String,
     inner_container: ContainerAsync<GenericImage>,
     input_tx: mpsc::Sender<Packet>,
 }
@@ -40,7 +42,8 @@ impl RunnableContainer for Container {
     ) -> anyhow::Result<Self> {
         //launch container from docker file path with env
 
-        let image = GenericImage::new(image_name, image_tag);
+        let image = GenericImage::new(image_name, image_tag)
+        .with_wait_for(WaitFor::millis(1000));
 
         let mut container_req = image.with_container_name(&node_name).with_open_stdin(true);
         for e in env {
@@ -73,10 +76,11 @@ impl RunnableContainer for Container {
 
         let (input_tx, mut input_rx) = tokio::sync::mpsc::channel(10);
 
+        let cloned_node_name = node_name.clone();
         tokio::spawn(async move {
             while let Some(packet) = input_rx.recv().await {
-                let input_str = serde_json::to_string(&packet).unwrap();
-                eprintln!("stdin: ${}", input_str);
+                let input_str = serde_json::to_string(&packet).unwrap() + "\n";
+                eprintln!("{} stdin: {}", cloned_node_name, input_str);
                 stdin
                     .write_all(input_str.into_bytes().as_slice())
                     .await
@@ -86,6 +90,7 @@ impl RunnableContainer for Container {
         });
 
         Ok(Container {
+            node_name,
             inner_container: container,
             input_tx,
         })
@@ -93,11 +98,12 @@ impl RunnableContainer for Container {
 
     fn subscribe_stdout(&self, output_tx: mpsc::Sender<Packet>) {
         let mut stdout = self.inner_container.stdout(true).lines();
+        let node_name = self.node_name.clone();
         tokio::spawn(async move {
             let mut decoder = LineDecoder::new();
             let output_tx = output_tx.clone();
             while let Some(line) = stdout.next_line().await.unwrap() {
-                eprintln!("stdout: {}", line);
+                // eprintln!("{} stdout: {}", &node_name, line);
                 if let Some(result) = decoder.add_to_buffer(line.clone()) {
                     match result {
                         Ok(p) => {
@@ -107,17 +113,18 @@ impl RunnableContainer for Container {
                         }
                         Err(e) => {
                             eprintln!("Failed to decode packet: {}", e);
+                            decoder.clear();
                         }
                     }
                 }
             }
         });
 
-
-        let mut stdout = self.inner_container.stderr(true).lines();
+        let node_name = self.node_name.clone();
+        let mut stderr = self.inner_container.stderr(true).lines();
         tokio::spawn(async move {
-            while let Some(line) = stdout.next_line().await.unwrap() {
-                eprintln!("stderr: {}", line);
+            while let Some(line) = stderr.next_line().await.unwrap() {
+                eprintln!("{} stderr: {}", &node_name, line);
             }
         });
     }

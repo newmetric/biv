@@ -63,7 +63,7 @@ async fn test_runtime_sends_and_receives_rpc_packets() {
         .expected_stdout_packets = Some(vec![Packet::Rpc(Rpc {
         src: "node1".to_string(),
         dst: "node2".to_string(),
-        data: vec![],
+        data: String::new(),
     })]);
 
     let (stdin_tx, mut stdin_rx) = mpsc::channel(10);
@@ -106,7 +106,7 @@ async fn test_runtime_sends_and_receives_broadcast_packets() {
         .unwrap()
         .expected_stdout_packets = Some(vec![Packet::Broadcast(Broadcast {
         src: "node1".to_string(),
-        data: vec![],
+        data: String::new(),
     })]);
 
     let mut stdins = vec![];

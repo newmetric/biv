@@ -45,6 +45,7 @@ impl LineDecoder {
         // When brace depth returns to 0 after starting, we have a complete JSON object
         if self.started && self.brace_depth == 0 {
             let result = serde_json::from_slice::<Packet>(&self.buffer);
+            eprintln!("current buffer: {}", String::from_utf8(self.buffer.clone()).unwrap());
             return Some(result.map_err(|e| anyhow!(e)));
         }
 

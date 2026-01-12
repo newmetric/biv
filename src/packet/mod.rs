@@ -1,5 +1,6 @@
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
-use serde_with::base64::Base64;
 use serde_with::serde_as;
 
 pub type NodeId = String;
@@ -10,6 +11,22 @@ pub enum Packet {
     Rpc(Rpc),
     Broadcast(Broadcast),
     Init(Init),
+}
+
+impl fmt::Display for Packet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> core::fmt::Result {
+        return match self {
+            Packet::Rpc(rpc) => {
+                write!(f, "Rpc {{ src: {}, dst: {}, data: {} }}", rpc.src, rpc.dst, rpc.data)
+            },
+            Packet::Broadcast(broadcast) => {
+                write!(f, "Broadcast {{ src: {}, data: {} }}", broadcast.src, broadcast.data)
+            },
+            Packet::Init(init) => {
+                write!(f, "Init {{ node_id: {}, data: {} }}", init.node_id, init.data)
+            },
+        };
+    }
 }
 
 impl Packet {
@@ -27,7 +44,7 @@ impl Packet {
             Packet::Init(_) => None,
         }
     }
-    pub fn data(&self) -> Vec<u8> {
+    pub fn data(&self) -> String {
         match self {
             Packet::Rpc(rpc) => rpc.data.clone(),
             Packet::Broadcast(broadcast) => broadcast.data.clone(),
@@ -41,22 +58,19 @@ impl Packet {
 pub struct Rpc {
     pub src: NodeId,
     pub dst: NodeId,
-    #[serde_as(as = "Base64")]
-    pub data: Vec<u8>,
+    pub data: String,
 }
 
 #[serde_as]
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 pub struct Broadcast {
     pub src: NodeId,
-    #[serde_as(as = "Base64")]
-    pub data: Vec<u8>,
+    pub data: String,
 }
 
 #[serde_as]
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 pub struct Init {
     pub node_id: NodeId,
-    #[serde_as(as = "Base64")]
-    pub data: Vec<u8>,
+    pub data: String,
 }
